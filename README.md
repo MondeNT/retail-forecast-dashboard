@@ -19,7 +19,7 @@ Interactive demand forecast with hover tooltips, model switching tabs (Linear, E
 ### Dark Mode
 Full dark theme with automatic system detection and manual toggle. The product dropdown lets you switch between all tracked items. All charts, KPIs, and confidence bands adapt to the selected theme.
 
-![Dashboard - Dark Mode](docs/screenshot-dark.png)
+<img width="1501" height="826" alt="Image" src="https://github.com/user-attachments/assets/e5ccd318-d419-4926-86a4-b2d4d8d99a4d" />
 
 ---
 
