@@ -1,17 +1,29 @@
-# 📊 Retail Sales Forecast Engine
+# Retail Sales Forecast Engine
 
 A production-ready demand forecasting dashboard with multi-model comparison, confidence intervals, and intelligent inventory recommendations.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?style=flat&logo=fastapi&logoColor=white)
+![Chart.js](https://img.shields.io/badge/Chart.js-4.x-FF6384?style=flat&logo=chartdotjs&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat)
 
-<p align="center">
-  <img src="docs/screenshot-light.png" alt="Dashboard Light Mode" width="48%">
-  <img src="docs/screenshot-dark.png" alt="Dashboard Dark Mode" width="48%">
-</p>
+---
 
-## ✨ Features
+## Dashboard Preview
+
+### Light Mode
+Interactive demand forecast with hover tooltips, model switching tabs (Linear, Exp Smooth, Moving Avg), and a decision summary panel showing predicted units, suggested stock levels, confidence intervals, and model comparison metrics.
+
+![Dashboard - Light Mode](docs/screenshot-light.png)
+
+### Dark Mode
+Full dark theme with automatic system detection and manual toggle. The product dropdown lets you switch between all tracked items. All charts, KPIs, and confidence bands adapt to the selected theme.
+
+![Dashboard - Dark Mode](docs/screenshot-dark.png)
+
+---
+
+## Features
 
 ### Multi-Model Forecasting
 - **Linear Regression** — Trend-based extrapolation for steady growth patterns
@@ -27,17 +39,17 @@ A production-ready demand forecasting dashboard with multi-model comparison, con
 
 ### Inventory Optimization
 - **Smart Stock Recommendations** — Forecast + adaptive safety buffer
-- **Buffer scaling** — Larger buffer for less confident predictions
+- **Buffer Scaling** — Larger buffer applied when model confidence is lower
 
-### Modern Dashboard
+### Dashboard
 - **Dark/Light Theme** — System-aware with manual toggle
-- **Real-time Updates** — Instant model switching
-- **Responsive Design** — Works on desktop and mobile
-- **Interactive Charts** — Hover tooltips, confidence bands
+- **Real-time Model Switching** — Instantly compare Linear, Exp Smoothing, and Moving Average
+- **Responsive Layout** — Works on desktop, tablet, and mobile
+- **Interactive Charts** — Hover tooltips, forecast line, and confidence bands
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.10+
@@ -46,75 +58,78 @@ A production-ready demand forecasting dashboard with multi-model comparison, con
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/retail-forecast-dashboard.git
+git clone https://github.com/MondeNT/retail-forecast-dashboard.git
 cd retail-forecast-dashboard
 
-# Create virtual environment (recommended)
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
 pip install -r requirements.txt
 ```
 
 ### Run the API
 
 ```bash
-python -m uvicorn app.main:app --reload --port 8000
+python3 -m uvicorn app.main:app --reload --port 8000
 ```
 
 ### Open the Dashboard
 
-Option A: Open `static/index.html` directly in your browser
+Visit [http://127.0.0.1:8000/dashboard](http://127.0.0.1:8000/dashboard)
 
-Option B: Visit http://127.0.0.1:8000/dashboard
+API documentation is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 retail-forecast-dashboard/
 ├── app/
 │   └── main.py              # FastAPI application
 ├── analysis/
-│   └── forecast.py          # Forecasting models & analytics
+│   └── forecast.py          # Forecasting models and analytics
 ├── data/
-│   └── sales.csv            # Sample retail data
+│   └── sales.csv            # Sample retail sales data (5 products, 12 months)
 ├── static/
-│   └── index.html           # Dashboard frontend
-├── reports/                  # Generated PDF reports
+│   └── index.html           # Dashboard frontend (Chart.js)
 ├── tests/
-│   └── test_forecast.py     # Unit tests
+│   └── test_forecast.py     # Unit and integration tests
+├── reports/                  # Generated PDF reports
+├── docs/                     # Screenshots and documentation assets
+├── Dockerfile
+├── docker-compose.yml
+├── Makefile
+├── pyproject.toml
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## 🔌 API Reference
+## API Reference
 
 ### Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/` | Health check |
-| `GET` | `/products` | List all products |
-| `GET` | `/sales?product={name}` | Historical sales data |
-| `GET` | `/forecast?product={name}&model={type}` | Generate forecast |
-| `GET` | `/compare?product={name}` | Compare all models |
+| `GET` | `/` | Health check and endpoint listing |
+| `GET` | `/health` | Detailed health status |
+| `GET` | `/products` | List all available products |
+| `GET` | `/sales?product={name}` | Historical sales data for a product |
+| `GET` | `/forecast?product={name}&model={type}` | Generate forecast with selected model |
+| `GET` | `/compare?product={name}` | Compare all models for a product |
 | `GET` | `/summary` | Portfolio-wide analytics |
-| `GET` | `/trends` | Trend analysis for all products |
-| `GET` | `/docs` | Interactive API documentation |
+| `GET` | `/trends` | Trend analysis across all products |
+| `GET` | `/docs` | Interactive Swagger documentation |
 
 ### Model Types
 
 | Model | API Value | Best For |
 |-------|-----------|----------|
-| Linear Regression | `linear_regression` | Steady trends |
-| Exponential Smoothing | `exponential_smoothing` | Adaptive trends |
-| Moving Average | `moving_average` | Stable demand |
+| Linear Regression | `linear_regression` | Steady, consistent growth |
+| Exponential Smoothing | `exponential_smoothing` | Adaptive, changing trends |
+| Moving Average | `moving_average` | Stable, low-variance demand |
 
 ### Example Response
 
@@ -123,41 +138,40 @@ retail-forecast-dashboard/
   "product": "Bread",
   "model": "linear_regression",
   "next_month": "2026-02",
-  "predicted_units": 218.45,
-  "lower_bound": 195.2,
-  "upper_bound": 241.7,
-  "suggested_stock": 251,
-  "mae_last_2_months": 8.34,
-  "mape_last_2_months": 4.12,
+  "predicted_units": 208.56,
+  "lower_bound": 188.84,
+  "upper_bound": 228.28,
+  "suggested_stock": 240,
+  "mae_last_2_months": 15.98,
+  "mape_last_2_months": 7.85,
   "trend": "up",
-  "seasonality_detected": false
+  "seasonality_detected": false,
+  "anomaly_indices": []
 }
 ```
 
 ---
 
-## 📈 Model Details
+## Model Details
 
 ### Linear Regression
-Simple but effective for products with consistent growth. Fits a line through historical data and extrapolates.
-
-$$\hat{y}_{t+1} = \beta_0 + \beta_1 \cdot t$$
+Fits a trend line through historical data and extrapolates to the next time step. Effective for products with consistent growth patterns.
 
 ### Exponential Smoothing (Holt's Method)
-Double exponential smoothing that adapts to changing trends:
+Double exponential smoothing that maintains a level and trend component, adapting to recent changes in the data through configurable smoothing parameters (alpha, beta).
 
-$$L_t = \alpha y_t + (1-\alpha)(L_{t-1} + T_{t-1})$$
-$$T_t = \beta(L_t - L_{t-1}) + (1-\beta)T_{t-1}$$
+### Moving Average
+Averages the most recent observations (default window of 3 months) as a forecast. Serves as a simple baseline for comparison against more sophisticated models.
 
 ### Backtesting
-Models are validated using walk-forward validation:
-- Train on first 10 months
-- Predict months 11-12
-- Calculate MAE and MAPE on held-out data
+All models are validated using walk-forward validation:
+- Train on the first 10 months of data
+- Predict months 11 and 12
+- Calculate MAE (Mean Absolute Error) and MAPE (Mean Absolute Percentage Error) on the held-out set
 
 ---
 
-## 🛠️ Development
+## Development
 
 ### Running Tests
 
@@ -165,57 +179,58 @@ Models are validated using walk-forward validation:
 pytest tests/ -v
 ```
 
-### Adding New Models
+### Adding a New Model
 
-1. Add forecast function in `analysis/forecast.py`
-2. Register in `ModelType` enum
-3. Add to `model_funcs` dictionary in `forecast_next_month()`
-4. Add tab in dashboard HTML
+1. Add the forecast function in `analysis/forecast.py`
+2. Register it in the `ModelType` enum
+3. Add it to the `model_funcs` dictionary in `forecast_next_month()`
+4. Add a corresponding tab in the dashboard HTML
 
-### Customization
+### Docker
 
-**Change confidence level:**
-```python
-# In forecast.py
-linear_regression_forecast(values, confidence=0.90)  # 90% CI
+```bash
+docker build -t forecast-dashboard .
+docker run -p 8000:8000 forecast-dashboard
 ```
 
-**Adjust safety buffer:**
-```python
-# In forecast.py, forecast_next_month()
-buffer = 1.20  # 20% safety stock
+Or with Docker Compose:
+
+```bash
+docker-compose up
 ```
 
 ---
 
-## 🎯 Roadmap
+## Tech Stack
 
-- [ ] ARIMA/SARIMA models
+| Layer | Technology |
+|-------|-----------|
+| Backend | Python, FastAPI, Uvicorn |
+| Forecasting | scikit-learn, SciPy, NumPy, Pandas |
+| Frontend | HTML, CSS, JavaScript, Chart.js |
+| Testing | pytest |
+| Deployment | Docker, Docker Compose |
+
+---
+
+## Roadmap
+
+- [ ] ARIMA / SARIMA models
 - [ ] Prophet integration
 - [ ] Multi-step forecasting (3, 6, 12 months)
-- [ ] CSV upload in dashboard
+- [ ] CSV upload via the dashboard
 - [ ] PostgreSQL backend
-- [ ] Docker deployment
 - [ ] Automated PDF report generation
+- [ ] CI/CD with GitHub Actions
 
 ---
 
-## 📜 License
+## License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🤝 Contributing
+## Author
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-<p align="center">
-  <b>Built with ❤️ for data-driven inventory management</b>
-</p>
+**Monde Ntjatje** — [github.com/MondeNT](https://github.com/MondeNT)
