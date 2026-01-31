@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forecast Engine | Retail Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <style>
+    :root {
+      /* Light theme */
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --border: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-subtle: #eef2ff;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-bg: #fffbeb;
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+      --chart-actual: #6366f1;
+      --chart-predicted: #10b981;
+      --chart-ci: rgba(16, 185, 129, 0.15);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --border: #334155;
+      --border-hover: #475569;
+      --accent: #818cf8;
+      --accent-hover: #a5b4fc;
+      --accent-subtle: rgba(99, 102, 241, 0.15);
+      --success: #34d399;
+      --success-bg: rgba(16, 185, 129, 0.15);
+      --warning: #fbbf24;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --danger: #f87171;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.4);
+      --chart-actual: #818cf8;
+      --chart-predicted: #34d399;
+      --chart-ci: rgba(52, 211, 153, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* Animated gradient background */
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+      animation: fadeInDown 0.5s ease;
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--success));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      max-width: 400px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* Status pill */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: background 0.3s ease;
+    }
+
+    .status-dot.online {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.offline {
+      background: var(--danger);
+    }
+
+    /* Theme toggle */
+    .theme-toggle {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-toggle:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--border-hover);
+    }
+
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--text-secondary);
+      transition: fill 0.2s ease;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    /* Grid layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+      animation: fadeInUp 0.5s ease backwards;
+    }
+
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    select {
+      padding: 10px 14px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text-primary);
+      min-width: 180px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    select:hover, select:focus {
+      border-color: var(--accent);
+    }
+
+    /* Model tabs */
+    .model-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-tertiary);
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .model-tab {
+      padding: 8px 14px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .model-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .model-tab.active {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Chart container */
+    .chart-container {
+      position: relative;
+      height: 320px;
+      margin-top: 8px;
+    }
+
+    /* Legend */
+    .chart-legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+    }
+
+    .legend-dot.actual { background: var(--chart-actual); }
+    .legend-dot.predicted { background: var(--chart-predicted); }
+    .legend-dot.ci { 
+      background: var(--chart-ci); 
+      border: 2px dashed var(--chart-predicted);
+    }
+
+    /* KPIs */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .kpi {
+      padding: 16px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .kpi:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kpi-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Trend indicators */
+    .trend-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .trend-badge.up {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .trend-badge.down {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .trend-badge.stable {
+      background: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .trend-badge svg {
+      width: 12px;
+      height: 12px;
+      fill: currentColor;
+    }
+
+    /* Model comparison card */
+    .model-comparison {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .model-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .model-row:last-child {
+      border-bottom: none;
+    }
+
+    .model-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .model-name.best {
+      color: var(--accent);
+    }
+
+    .model-name .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: var(--accent-subtle);
+      color: var(--accent);
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 6px;
+      text-transform: uppercase;
+    }
+
+    .model-metrics {
+      display: flex;
+      gap: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    .model-metrics span {
+      color: var(--text-secondary);
+    }
+
+    /* Confidence interval display */
+    .confidence-display {
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .confidence-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .confidence-range {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .confidence-range .value {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .confidence-range .separator {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .confidence-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-primary);
+      border-radius: 3px;
+      margin: 0 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .confidence-bar-fill {
+      position: absolute;
+      top: 0;
+      left: 20%;
+      right: 20%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--chart-predicted), var(--accent));
+      border-radius: 3px;
+    }
+
+    /* Error state */
+    .error-box {
+      display: none;
+      padding: 14px 16px;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger);
+      border-radius: 10px;
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    .error-box.show {
+      display: block;
+      animation: fadeInUp 0.3s ease;
+    }
+
+    /* Loading state */
+    .loading {
+      position: relative;
+      pointer-events: none;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--bg-secondary);
+      opacity: 0.7;
+      border-radius: inherit;
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Footer note */
+    .footer-note {
+      margin-top: 16px;
+      padding: 14px;
+      background: var(--accent-subtle);
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .footer-note strong {
+      color: var(--accent);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .model-tabs {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  
+  <div class="container">
+    <header>
+      <div class="brand">
+        <h1>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"/>
+            <path d="M18 9l-5 5-4-4-3 3"/>
+          </svg>
+          <span>Forecast Engine</span>
+        </h1>
+        <p>Multi-model demand forecasting with confidence intervals and inventory recommendations</p>
+      </div>
+      
+      <div class="header-actions">
+        <div class="status-pill">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Checking API...</span>
+        </div>
+        
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+          <svg class="sun-icon" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+        
+        <button class="btn" id="refreshBtn">
+          <svg viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Refresh
+        </button>
+        
+        <button class="btn btn-primary" id="reportBtn">
+          <svg viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Export PDF
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-grid">
+      <!-- Chart Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Demand Forecast</span>
+          <div class="controls">
+            <select id="productSelect">
+              <option value="">Loading products...</option>
+            </select>
+            <div class="model-tabs" id="modelTabs">
+              <button class="model-tab active" data-model="linear_regression">Linear</button>
+              <button class="model-tab" data-model="exponential_smoothing">Exp Smooth</button>
+              <button class="model-tab" data-model="moving_average">Moving Avg</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="forecastChart"></canvas>
+        </div>
+
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="legend-dot actual"></span>
+            Actual Sales
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot predicted"></span>
+            Forecast
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot ci"></span>
+            95% Confidence
+          </div>
+        </div>
+
+        <div class="error-box" id="errorBox"></div>
+      </div>
+
+      <!-- KPI Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Decision Summary</span>
+          <span class="trend-badge" id="trendBadge">
+            <svg viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg>
+            <span id="trendText">—</span>
+          </span>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">Next Month</div>
+            <div class="kpi-value" id="nextMonth">—</div>
+            <div class="kpi-hint">Forecast horizon</div>
+          </div>
+          
+          <div class="kpi">
+            <div class="kpi-label">Predicted Units</div>
+            <div class="kpi-value" id="predictedUnits">—</div>
+            <div class="kpi-hint">Model output</div>
+          </div>
+          
+          <div class="kpi">
+            <div class="kpi-label">Suggested Stock</div>
+            <div class="kpi-value" id="suggestedStock">—</div>
+            <div class="kpi-hint">Includes safety buffer</div>
+          </div>
+          
+          <div class="kpi">
+            <div class="kpi-label">Model Error (MAE)</div>
+            <div class="kpi-value" id="maeValue">—</div>
+            <div class="kpi-hint">Lower is better</div>
+          </div>
+        </div>
+
+        <div class="confidence-display">
+          <div class="confidence-label">95% Confidence Interval</div>
+          <div class="confidence-range">
+            <span class="value" id="lowerBound">—</span>
+            <div class="confidence-bar">
+              <div class="confidence-bar-fill"></div>
+            </div>
+            <span class="value" id="upperBound">—</span>
+          </div>
+        </div>
+
+        <div class="model-comparison">
+          <div class="card-title" style="margin-bottom: 12px;">Model Comparison</div>
+          <div id="modelComparison">
+            <div class="model-row skeleton" style="height: 40px;"></div>
+            <div class="model-row skeleton" style="height: 40px;"></div>
+            <div class="model-row skeleton" style="height: 40px;"></div>
+          </div>
+        </div>
+
+        <div class="footer-note">
+          <strong>Portfolio Project:</strong> FastAPI + Chart.js dashboard with multi-model forecasting, 
+          backtesting validation (MAE/MAPE), confidence intervals, and inventory optimization.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // CONFIGURATION
+    // =========================================================================
+    const API_BASE = 'http://127.0.0.1:8000';
+    
+    // =========================================================================
+    // DOM ELEMENTS
+    // =========================================================================
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    const statusDot = $('#statusDot');
+    const statusText = $('#statusText');
+    const productSelect = $('#productSelect');
+    const modelTabs = $('#modelTabs');
+    const refreshBtn = $('#refreshBtn');
+    const reportBtn = $('#reportBtn');
+    const themeToggle = $('#themeToggle');
+    const errorBox = $('#errorBox');
+
+    // KPI elements
+    const nextMonthEl = $('#nextMonth');
+    const predictedUnitsEl = $('#predictedUnits');
+    const suggestedStockEl = $('#suggestedStock');
+    const maeValueEl = $('#maeValue');
+    const lowerBoundEl = $('#lowerBound');
+    const upperBoundEl = $('#upperBound');
+    const trendBadge = $('#trendBadge');
+    const trendText = $('#trendText');
+    const modelComparisonEl = $('#modelComparison');
+
+    let chart = null;
+    let currentModel = 'linear_regression';
+
+    // =========================================================================
+    // THEME MANAGEMENT
+    // =========================================================================
+    function initTheme() {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      updateThemeIcon(theme);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateThemeIcon(next);
+      
+      // Recreate chart with new colors
+      if (chart && productSelect.value) {
+        loadForecast(productSelect.value, currentModel);
+      }
+    }
+
+    function updateThemeIcon(theme) {
+      const sunIcon = themeToggle.querySelector('.sun-icon');
+      const moonIcon = themeToggle.querySelector('.moon-icon');
+      sunIcon.style.display = theme === 'dark' ? 'block' : 'none';
+      moonIcon.style.display = theme === 'dark' ? 'none' : 'block';
+    }
+
+    // =========================================================================
+    // API UTILITIES
+    // =========================================================================
+    async function fetchJSON(endpoint) {
+      const res = await fetch(`${API_BASE}${endpoint}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.add('show');
+    }
+
+    function hideError() {
+      errorBox.classList.remove('show');
+    }
+
+    function formatNumber(val, decimals = 0) {
+      if (val === null || val === undefined || Number.isNaN(val)) return '—';
+      return Number(val).toLocaleString('en-US', { 
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    // =========================================================================
+    // API CHECK
+    // =========================================================================
+    async function checkAPI() {
+      try {
+        await fetchJSON('/health');
+        statusDot.className = 'status-dot online';
+        statusText.textContent = 'API Online';
+        hideError();
+        return true;
+      } catch (e) {
+        statusDot.className = 'status-dot offline';
+        statusText.textContent = 'API Offline';
+        showError('Cannot reach API. Run: python -m uvicorn app.main:app --reload --port 8000');
+        return false;
+      }
+    }
+
+    // =========================================================================
+    // DATA LOADING
+    // =========================================================================
+    async function loadProducts() {
+      const data = await fetchJSON('/products');
+      productSelect.innerHTML = data.products
+        .map(p => `<option value="${p}">${p}</option>`)
+        .join('');
+    }
+
+    async function loadForecast(product, model) {
+      hideError();
+      
+      try {
+        // Load forecast for selected model
+        const forecast = await fetchJSON(`/forecast?product=${encodeURIComponent(product)}&model=${model}`);
+        
+        // Load model comparison
+        const comparison = await fetchJSON(`/compare?product=${encodeURIComponent(product)}`);
+        
+        updateKPIs(forecast);
+        updateTrend(forecast);
+        updateModelComparison(comparison);
+        renderChart(forecast);
+      } catch (e) {
+        showError(`Failed to load data: ${e.message}`);
+      }
+    }
+
+    // =========================================================================
+    // UI UPDATES
+    // =========================================================================
+    function updateKPIs(forecast) {
+      nextMonthEl.textContent = forecast.next_month || '—';
+      predictedUnitsEl.textContent = formatNumber(forecast.predicted_units, 0);
+      suggestedStockEl.textContent = formatNumber(forecast.suggested_stock);
+      maeValueEl.textContent = formatNumber(forecast.mae_last_2_months, 2);
+      lowerBoundEl.textContent = formatNumber(forecast.lower_bound, 0);
+      upperBoundEl.textContent = formatNumber(forecast.upper_bound, 0);
+    }
+
+    function updateTrend(forecast) {
+      const trend = forecast.trend || 'stable';
+      trendBadge.className = `trend-badge ${trend}`;
+      
+      const icons = {
+        up: '<svg viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg>',
+        down: '<svg viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>',
+        stable: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>'
+      };
+      
+      const labels = { up: 'Trending Up', down: 'Trending Down', stable: 'Stable' };
+      
+      trendBadge.innerHTML = `${icons[trend]}<span>${labels[trend]}</span>`;
+    }
+
+    function updateModelComparison(comparison) {
+      const bestModel = comparison.best_model;
+      const models = comparison.models;
+      
+      const modelLabels = {
+        'linear_regression': 'Linear Regression',
+        'exponential_smoothing': 'Exp Smoothing',
+        'moving_average': 'Moving Average'
+      };
+      
+      modelComparisonEl.innerHTML = Object.entries(models)
+        .map(([name, data]) => {
+          const isBest = name === bestModel;
+          const mae = data.mae_last_2_months;
+          const pred = data.predicted_units;
+          
+          return `
+            <div class="model-row">
+              <span class="model-name ${isBest ? 'best' : ''}">
+                ${modelLabels[name]}
+                ${isBest ? '<span class="badge">Best</span>' : ''}
+              </span>
+              <div class="model-metrics">
+                <span>Pred: ${formatNumber(pred)}</span>
+                <span>MAE: ${formatNumber(mae, 2)}</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    // =========================================================================
+    // CHART RENDERING
+    // =========================================================================
+    function getChartColors() {
+      const style = getComputedStyle(document.documentElement);
+      return {
+        actual: style.getPropertyValue('--chart-actual').trim(),
+        predicted: style.getPropertyValue('--chart-predicted').trim(),
+        ci: style.getPropertyValue('--chart-ci').trim(),
+        text: style.getPropertyValue('--text-secondary').trim(),
+        border: style.getPropertyValue('--border').trim(),
+      };
+    }
+
+    function renderChart(forecast) {
+      const colors = getChartColors();
+      const ctx = document.getElementById('forecastChart').getContext('2d');
+      
+      if (chart) chart.destroy();
+
+      const history = forecast.history || [];
+      const labels = [...history.map(h => h.month), forecast.next_month];
+      const actualData = history.map(h => h.units_sold);
+      
+      // Create predicted line (only shows at the end)
+      const predictedData = [...Array(history.length - 1).fill(null), history[history.length - 1]?.units_sold, forecast.predicted_units];
+      
+      // Confidence interval bands
+      const upperData = [...Array(history.length).fill(null), forecast.upper_bound];
+      const lowerData = [...Array(history.length).fill(null), forecast.lower_bound];
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Actual Sales',
+              data: actualData,
+              borderColor: colors.actual,
+              backgroundColor: colors.actual + '20',
+              borderWidth: 2.5,
+              tension: 0.3,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: colors.actual,
+              fill: false,
+            },
+            {
+              label: 'Forecast',
+              data: predictedData,
+              borderColor: colors.predicted,
+              backgroundColor: colors.predicted,
+              borderWidth: 2.5,
+              borderDash: [6, 4],
+              tension: 0.3,
+              pointRadius: 6,
+              pointHoverRadius: 8,
+              pointBackgroundColor: colors.predicted,
+              pointStyle: 'rectRot',
+              fill: false,
+            },
+            {
+              label: 'Upper CI',
+              data: upperData,
+              borderColor: 'transparent',
+              backgroundColor: colors.ci,
+              pointRadius: 0,
+              fill: '+1',
+            },
+            {
+              label: 'Lower CI',
+              data: lowerData,
+              borderColor: 'transparent',
+              backgroundColor: 'transparent',
+              pointRadius: 0,
+              fill: false,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: colors.text + 'ee',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              padding: 12,
+              cornerRadius: 8,
+              displayColors: true,
+              callbacks: {
+                label: (ctx) => {
+                  if (ctx.dataset.label.includes('CI')) return null;
+                  const val = ctx.parsed.y;
+                  if (val === null) return null;
+                  return `${ctx.dataset.label}: ${formatNumber(val)} units`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: colors.border,
+                drawBorder: false
+              },
+              ticks: {
+                color: colors.text,
+                font: { size: 11 }
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: colors.border,
+                drawBorder: false
+              },
+              ticks: {
+                color: colors.text,
+                font: { size: 11 },
+                callback: (val) => formatNumber(val)
+              }
+            }
+          },
+          animation: {
+            duration: 750,
+            easing: 'easeOutQuart'
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // EVENT HANDLERS
+    // =========================================================================
+    productSelect.addEventListener('change', () => {
+      if (productSelect.value) {
+        loadForecast(productSelect.value, currentModel);
+      }
+    });
+
+    modelTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.model-tab');
+      if (!tab) return;
+      
+      $$('.model-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      currentModel = tab.dataset.model;
+      if (productSelect.value) {
+        loadForecast(productSelect.value, currentModel);
+      }
+    });
+
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = '<svg class="spin" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Loading...';
+      
+      const ok = await checkAPI();
+      if (ok && productSelect.value) {
+        await loadForecast(productSelect.value, currentModel);
+      }
+      
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Refresh';
+    });
+
+    reportBtn.addEventListener('click', () => {
+      window.open(`${API_BASE}/report/latest`, '_blank');
+    });
+
+    themeToggle.addEventListener('click', toggleTheme);
+
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+    (async function init() {
+      initTheme();
+      
+      const ok = await checkAPI();
+      if (!ok) return;
+      
+      await loadProducts();
+      if (productSelect.value) {
+        await loadForecast(productSelect.value, currentModel);
+      }
+    })();
+  </script>
+</body>
+</html>
