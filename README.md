@@ -14,7 +14,7 @@ A production-ready demand forecasting dashboard with multi-model comparison, con
 ### Light Mode
 Interactive demand forecast with hover tooltips, model switching tabs (Linear, Exp Smooth, Moving Avg), and a decision summary panel showing predicted units, suggested stock levels, confidence intervals, and model comparison metrics.
 
-![Dashboard - Light Mode](docs/screenshot-light.png)
+<img width="1482" height="821" alt="Image" src="https://github.com/user-attachments/assets/71201a29-4249-480d-b656-7b2784e0430d" />
 
 ### Dark Mode
 Full dark theme with automatic system detection and manual toggle. The product dropdown lets you switch between all tracked items. All charts, KPIs, and confidence bands adapt to the selected theme.
